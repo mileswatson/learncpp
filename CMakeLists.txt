@@ -10,3 +10,5 @@ target_include_directories(learncpp PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 add_executable(main apps/main.cpp)
 target_link_libraries(main PRIVATE learncpp)
+
+add_subdirectory(tests)
