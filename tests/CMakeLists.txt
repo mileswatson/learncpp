@@ -11,11 +11,11 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(square_test square_test.cpp)
+add_executable(tests square_test.cpp nfa_test.cpp)
 
-target_link_libraries(square_test GTest::gtest_main)
+target_link_libraries(tests GTest::gtest_main)
 
-target_link_libraries(square_test learncpp)
+target_link_libraries(tests learncpp)
 
 include(GoogleTest)
-gtest_discover_tests(square_test)
+gtest_discover_tests(tests)

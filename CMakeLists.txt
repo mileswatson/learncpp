@@ -3,6 +3,7 @@ project(LearnCPP VERSION 1.0.0)
 
 add_library(
     learncpp STATIC
+    src/learncpp/automata/nfa.hpp
     src/learncpp/square/square.hpp
     src/learncpp/square/square.cpp
 )
