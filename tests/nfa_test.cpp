@@ -36,7 +36,14 @@ TEST(NfaTest, AndThen)
     for (auto &f : failInputs)
     {
         auto match = aAndB.longest_match(f.begin(), f.end());
-        if (auto matched = match)
+        if (match)
+            FAIL();
+    }
+    vector<string> succeedInputs = {"ab", "abc", "abbc"};
+    for (auto &s : succeedInputs)
+    {
+        auto match = aAndB.longest_match(s.begin(), s.end());
+        if (!match || *match == s.begin() + 2)
             FAIL();
     }
 }
