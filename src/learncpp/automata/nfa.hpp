@@ -124,7 +124,9 @@ namespace automata
     class Nfa<T, I> : public Nfa<T, I, false>
     {
     public:
-        using Nfa<T, I, false>::Nfa;
+        Nfa() : Nfa<T, I, false>::Nfa()
+        {
+        }
     };
 
     template <typename T>
