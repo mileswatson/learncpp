@@ -97,6 +97,12 @@ namespace automata
     }
 
     template <typename T>
+    Nfa<T> match(T c)
+    {
+        return Nfa<T>(c);
+    }
+
+    template <typename T>
     class Nfa
     {
     private:
@@ -129,9 +135,25 @@ namespace automata
             auto e = make_unique<NfaNode<T>>();
             start = &*s;
             end = &*e;
-            s->add_connection(accept, &*e);
             nodes[s->get_id()] = move(s);
             nodes[e->get_id()] = move(e);
+
+            start->add_connection(accept, end);
+        }
+
+        Nfa(const unordered_set<T> &acceptAny)
+        {
+            auto s = make_unique<NfaNode<T>>();
+            auto e = make_unique<NfaNode<T>>();
+            start = &*s;
+            end = &*e;
+            nodes[s->get_id()] = move(s);
+            nodes[e->get_id()] = move(e);
+
+            for (const auto &accept : acceptAny)
+            {
+                start->add_connection(accept, end);
+            }
         }
 
         template <typename U>

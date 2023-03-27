@@ -45,7 +45,7 @@ TEST(NfaTest, EpsilonClosure)
     ASSERT_EQ(epsilon_closure, unordered_set({&*a, &*b, &*c}));
 }
 
-void test_nfa(Nfa<char> &&nfa, vector<string> failInputs, vector<pair<string, int>> succeedInputs)
+void test_nfa(Nfa<char> &&nfa, const vector<string> &failInputs, const vector<pair<string, int>> &succeedInputs)
 {
     for (auto &f : failInputs)
     {
@@ -88,9 +88,10 @@ TEST(NfaTest, either)
     vector<string> failInputs = {"c"};
     vector<pair<string, int>> succeedInputs = {make_pair("a", 1), make_pair("b", 1), make_pair("ab", 1), make_pair("ba", 1), make_pair("ac", 1), make_pair("bc", 1)};
     test_nfa(move(aOrB), failInputs, succeedInputs);
+    test_nfa(Nfa<char>({'a', 'b'}), failInputs, succeedInputs);
 }
 
-TEST(NfaTest, zerOrMore)
+TEST(NfaTest, zeroOrMore)
 {
     auto abStar = zeroOrMore(concat(Nfa('a'), Nfa('b')));
     vector<string> failInputs = {};
