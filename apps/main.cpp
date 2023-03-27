@@ -8,9 +8,9 @@ using namespace std;
 int main()
 {
     cout << square(5) << endl;
-    automata::NfaNode<int> node;
+    automata::NfaNode<int, string> node("3");
     automata::Nfa<int> n(2);
 
-    node.add_connection(3, nullptr);
+    node.add_connection(3, &node);
     return 0;
 }

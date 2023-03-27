@@ -28,7 +28,7 @@ namespace automata
         operator=(NfaNode<T, I> &&) = delete;
 
     public:
-        NfaNode(T id) : id(id)
+        NfaNode(I id) : id(id)
         {
         }
 
@@ -47,7 +47,16 @@ namespace automata
             return connections[input];
         }
 
-        virtual void visit_epsilon_closure(unordered_set<NfaNode<T, I> *> &visited) = 0;
+        void visit_epsilon_closure(unordered_set<NfaNode<T, I> *> &visited)
+        {
+            if (!visited.emplace(static_cast<NfaNode<T, I> *>(this)).second)
+                return;
+            const unordered_set<NfaNode<T, I> *> &toVisit = this->connections[{}];
+            for (auto &v : toVisit)
+            {
+                v->visit_epsilon_closure(visited);
+            }
+        };
 
         unordered_set<NfaNode<T, I> *> epsilon_closure()
         {
@@ -60,51 +69,18 @@ namespace automata
     template <typename T, typename I>
     class NfaNode<T, I, true> : public NfaNode<T, I, false>
     {
-    public:
-        void visit_epsilon_closure(unordered_set<NfaNode<T, I> *> &visited) override
-        {
-            if (!visited.emplace(this).second)
-                return;
-            const unordered_set<NfaNode<T, I> *> &toVisit = this->connections[{}];
-            for (auto &v : toVisit)
-            {
-                v->visit_epsilon_closure(visited);
-            }
-        }
+        using NfaNode<T, I, false>::NfaNode;
     };
 
     template <typename T>
     class NfaNode<T, int, true> : public NfaNode<T, int, false>
     {
+        using NfaNode<T, int, false>::NfaNode;
         static inline int nextId = 0;
 
     public:
         NfaNode() : NfaNode<T, int, false>(nextId++) {}
-
-        void visit_epsilon_closure(unordered_set<NfaNode<T> *> &visited) override
-        {
-            if (!visited.emplace(this).second)
-                return;
-            const unordered_set<NfaNode<T> *> &toVisit = this->connections[{}];
-            for (auto &v : toVisit)
-            {
-                v->visit_epsilon_closure(visited);
-            }
-        }
     };
-
-    /*
-        template <typename T, typename I>
-        void NfaNode<T, I>::visit_epsilon_closure(unordered_set<NfaNode<T, I> *> &visited)
-        {
-            if (!visited.emplace(this).second)
-                return;
-            const unordered_set<NfaNode<T, I> *> &toVisit = this->connections[{}];
-            for (auto &v : toVisit)
-            {
-                v->visit_epsilon_closure(visited);
-            }
-        }*/
 
     template <typename T>
     class Nfa;
