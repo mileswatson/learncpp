@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "optional": "cpp",
-        "new": "cpp",
-        "memory": "cpp",
-        "unordered_map": "cpp"
-    }
-}
