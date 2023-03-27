@@ -23,9 +23,9 @@ namespace automata
         unordered_map<optional<T>, unordered_set<NfaNode<T, I> *>> connections;
 
         NfaNode(const NfaNode<T, I> &) = delete;
-        operator=(const NfaNode<T, I> &) = delete;
+        NfaNode<T, I> &operator=(const NfaNode<T, I> &) = delete;
         NfaNode(NfaNode<T, I> &&) = delete;
-        operator=(NfaNode<T, I> &&) = delete;
+        NfaNode<T, I> &operator=(NfaNode<T, I> &&) = delete;
 
     public:
         NfaNode(I id) : id(id)
@@ -82,11 +82,11 @@ namespace automata
         NfaNode() : NfaNode<T, int, false>(nextId++) {}
     };
 
-    template <typename T>
+    template <typename T, typename I = int, bool fully_defined = true>
     class Nfa;
 
-    template <typename T>
-    Nfa<T> concat(Nfa<T> &&first, Nfa<T> &&second)
+    template <typename T, typename I>
+    Nfa<T, I> concat(Nfa<T, I> &&first, Nfa<T, I> &&second)
     {
         for (auto &[k, v] : second.nodes)
         {
@@ -97,8 +97,8 @@ namespace automata
         return move(first);
     };
 
-    template <typename T>
-    Nfa<T> either(Nfa<T> &&left, Nfa<T> &&right)
+    template <typename T, typename I>
+    Nfa<T, I> either(Nfa<T, I> &&left, Nfa<T, I> &&right)
     {
         for (auto &[k, v] : right.nodes)
         {
@@ -109,8 +109,8 @@ namespace automata
         return move(left);
     }
 
-    template <typename T>
-    Nfa<T> zeroOrMore(Nfa<T> &&nfa)
+    template <typename T, typename I>
+    Nfa<T, I> zeroOrMore(Nfa<T, I> &&nfa)
     {
         nfa.start->add_connection({}, nfa.end);
         nfa.end->add_connection({}, nfa.start);
@@ -118,73 +118,43 @@ namespace automata
     }
 
     template <typename T>
-    Nfa<T> match(T c)
+    Nfa<T, int> epsilon()
     {
-        return Nfa<T>(c);
+        return Nfa<T, int>();
     }
 
     template <typename T>
-    class Nfa
+    Nfa<T, int> match(T accept)
     {
-    private:
+        return Nfa<T, int>(accept);
+    }
+
+    template <typename T>
+    Nfa<T, int> matchAny(const unordered_set<T> &acceptAny)
+    {
+        return Nfa<T, int>(acceptAny);
+    }
+
+    template <typename T, typename I>
+    class Nfa<T, I, false>
+    {
+    protected:
         NfaNode<T> *start;
         NfaNode<T> *end;
         unordered_map<int, unique_ptr<NfaNode<T>>> nodes;
+
+        Nfa() = default;
 
         Nfa(NfaNode<T> *start, NfaNode<T> *end, unordered_map<int, unique_ptr<NfaNode<T>>> &&nodes) : start(start), end(end), nodes(move(nodes))
         {
         }
 
-        Nfa(const Nfa<T> &) = delete;
-        operator=(const Nfa<T> &) = delete;
+        Nfa(const Nfa<T, I> &) = delete;
+        Nfa<T, I> &operator=(const Nfa<T, I> &) = delete;
 
     public:
-        Nfa(Nfa<T> &&) = default;
-        Nfa<T> &operator=(Nfa<T> &&) = default;
-
-        Nfa()
-        {
-            auto s = make_unique<NfaNode<T>>();
-            start = &*s;
-            end = &*s;
-            nodes[s->get_id()] = move(s);
-        }
-
-        Nfa(T accept)
-        {
-            auto s = make_unique<NfaNode<T>>();
-            auto e = make_unique<NfaNode<T>>();
-            start = &*s;
-            end = &*e;
-            nodes[s->get_id()] = move(s);
-            nodes[e->get_id()] = move(e);
-
-            start->add_connection(accept, end);
-        }
-
-        Nfa(const unordered_set<T> &acceptAny)
-        {
-            auto s = make_unique<NfaNode<T>>();
-            auto e = make_unique<NfaNode<T>>();
-            start = &*s;
-            end = &*e;
-            nodes[s->get_id()] = move(s);
-            nodes[e->get_id()] = move(e);
-
-            for (const auto &accept : acceptAny)
-            {
-                start->add_connection(accept, end);
-            }
-        }
-
-        template <typename U>
-        friend Nfa<U> concat(Nfa<U> &&, Nfa<U> &&);
-
-        template <typename U>
-        friend Nfa<U> either(Nfa<U> &&, Nfa<U> &&);
-
-        template <typename U>
-        friend Nfa<U> zeroOrMore(Nfa<U> &&);
+        Nfa(Nfa<T, I, false> &&) = default;
+        Nfa<T, I, false> &operator=(Nfa<T, I, false> &&) = default;
 
         template <typename Iter>
             requires input_iterator<Iter> &&
@@ -211,8 +181,63 @@ namespace automata
             }
             return lastMatch;
         }
+
+        template <typename U, typename V>
+        friend Nfa<U, V> concat(Nfa<U, V> &&, Nfa<U, V> &&);
+
+        template <typename U, typename V>
+        friend Nfa<U, V> either(Nfa<U, V> &&, Nfa<U, V> &&);
+
+        template <typename U, typename V>
+        friend Nfa<U, V> zeroOrMore(Nfa<U, V> &&);
     };
 
+    template <typename T, typename I>
+    class Nfa<T, I> : public Nfa<T, I, false>
+    {
+    public:
+        using Nfa<T, I, false>::Nfa;
+    };
+
+    template <typename T>
+    class Nfa<T, int> : public Nfa<T, int, false>
+    {
+    public:
+        Nfa()
+        {
+            auto s = make_unique<NfaNode<T>>();
+            this->start = &*s;
+            this->end = &*s;
+            this->nodes[s->get_id()] = move(s);
+        }
+
+        Nfa(T accept)
+        {
+            auto s = make_unique<NfaNode<T>>();
+            auto e = make_unique<NfaNode<T>>();
+            this->start = &*s;
+            this->end = &*e;
+            this->nodes[s->get_id()] = move(s);
+            this->nodes[e->get_id()] = move(e);
+
+            this->start->add_connection(accept, this->end);
+        }
+
+        Nfa(const unordered_set<T> &acceptAny)
+        {
+            auto s = make_unique<NfaNode<T>>();
+            auto e = make_unique<NfaNode<T>>();
+            this->start = &*s;
+            this->end = &*e;
+            this->nodes[s->get_id()] = move(s);
+            this->nodes[e->get_id()] = move(e);
+
+            for (const auto &accept : acceptAny)
+            {
+                this->start->add_connection(accept, this->end);
+            }
+        }
+    };
 }
 
 #endif
