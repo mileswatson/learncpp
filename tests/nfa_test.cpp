@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <learncpp/automata/nfa.hpp>
+#include <learncpp/automata/nfa_node.hpp>
 #include <memory>
 
 using namespace std;

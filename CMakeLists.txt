@@ -6,6 +6,7 @@ set (CMAKE_CXX_STANDARD 20)
 add_library(
     learncpp STATIC
     src/learncpp/automata/nfa.hpp
+    src/learncpp/automata/nfa_node.hpp
     src/learncpp/square/square.hpp
     src/learncpp/square/square.cpp
 )
