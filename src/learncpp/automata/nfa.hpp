@@ -21,8 +21,20 @@ namespace automata
         unordered_map<optional<T>, unordered_set<NfaNode<T> *>> connections;
         NfaNode(const NfaNode<T> &) = delete;
         operator=(const NfaNode<T> &) = delete;
-        NfaNode(NfaNode &&) = delete;
+        NfaNode(NfaNode<T> &&) = delete;
         operator=(NfaNode<T> &&) = delete;
+
+    private:
+        void visit_epsilon_closure(unordered_set<NfaNode<T> *> &visited)
+        {
+            if (!visited.emplace(this).second)
+                return;
+            const unordered_set<NfaNode<T> *> &toVisit = connections[{}];
+            for (auto &v : toVisit)
+            {
+                v->visit_epsilon_closure(visited);
+            }
+        }
 
     public:
         NfaNode() {}
@@ -39,6 +51,13 @@ namespace automata
         const unordered_set<NfaNode<T> *> &next(optional<T> input)
         {
             return connections[input];
+        }
+
+        unordered_set<NfaNode<T> *> epsilon_closure()
+        {
+            unordered_set<NfaNode<T> *> visited;
+            visit_epsilon_closure(visited);
+            return visited;
         }
     };
 
@@ -69,14 +88,37 @@ namespace automata
             nodes[e->get_id()] = move(e);
         }
 
-        Nfa(Nfa<T> &&) = default;
-        Nfa &operator=(Nfa<T> &&) = default;
-
         static Nfa<T> and_then(Nfa<T> &&first, Nfa<T> &&second)
         {
             first.nodes.merge(second.nodes);
             first.end->add_connection({}, second.start);
             return Nfa<T>(first.start, second.end, move(first.nodes));
+        }
+
+        template <typename Iter>
+            requires input_iterator<Iter> &&
+                     same_as<typename Iter::value_type, T>
+        optional<Iter> longest_match(Iter b, Iter e) const
+        {
+            unordered_set<NfaNode<T> *> current = start->epsilon_closure();
+            optional<Iter> lastMatch = current.contains(end) ? optional(b) : nullopt;
+            for (; b != e && !current.empty(); b++)
+            {
+                unordered_set<NfaNode<T> *> next;
+                for (auto &c : current)
+                {
+                    const unordered_set<NfaNode<T> *> &beforeClosure = c->next(*b);
+                    for (auto &x : beforeClosure)
+                    {
+                        unordered_set<NfaNode<T> *> afterClosure = x->epsilon_closure();
+                        next.merge(afterClosure);
+                    }
+                }
+                current = move(next);
+                if (current.contains(end))
+                    lastMatch = optional(b);
+            }
+            return lastMatch;
         }
     };
 }
