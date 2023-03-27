@@ -62,6 +62,8 @@ namespace automata
         {
             auto s = make_unique<NfaNode<T>>();
             auto e = make_unique<NfaNode<T>>();
+            start = &*s;
+            end = &*e;
             s->add_connection(accept, &*e);
             nodes[s->get_id()] = move(s);
             nodes[e->get_id()] = move(e);
