@@ -50,36 +50,32 @@ namespace automata
     }
 
     template <typename T>
-    Nfa<T, int> epsilon()
+    Nfa<T> epsilon()
     {
-        return Nfa<T, int>();
+        return Nfa<T>();
     }
 
     template <typename T>
-    Nfa<T, int> match(T accept)
+    Nfa<T> match(T accept)
     {
-        return Nfa<T, int>(accept);
+        return Nfa<T>(accept);
     }
 
     template <typename T>
-    Nfa<T, int> matchAny(const unordered_set<T> &acceptAny)
+    Nfa<T> matchAny(const unordered_set<T> &acceptAny)
     {
-        return Nfa<T, int>(acceptAny);
+        return Nfa<T>(acceptAny);
     }
 
     template <typename T, typename I>
     class Nfa<T, I, false>
     {
     protected:
-        NfaNode<T> *start;
-        NfaNode<T> *end;
-        unordered_map<int, unique_ptr<NfaNode<T>>> nodes;
+        NfaNode<T, I> *start;
+        NfaNode<T, I> *end;
+        unordered_map<I, unique_ptr<NfaNode<T, I>>> nodes;
 
         Nfa() = default;
-
-        Nfa(NfaNode<T> *start, NfaNode<T> *end, unordered_map<int, unique_ptr<NfaNode<T>>> &&nodes) : start(start), end(end), nodes(move(nodes))
-        {
-        }
 
         Nfa(const Nfa<T, I> &) = delete;
         Nfa<T, I> &operator=(const Nfa<T, I> &) = delete;
@@ -93,17 +89,17 @@ namespace automata
                      same_as<typename Iter::value_type, T>
         optional<Iter> longest_match(Iter b, Iter e) const
         {
-            unordered_set<NfaNode<T> *> current = start->epsilon_closure();
+            unordered_set<NfaNode<T, I> *> current = start->epsilon_closure();
             optional<Iter> lastMatch = current.contains(end) ? optional(b) : nullopt;
             for (; b != e && !current.empty(); b++)
             {
-                unordered_set<NfaNode<T> *> next;
+                unordered_set<NfaNode<T, I> *> next;
                 for (auto &c : current)
                 {
-                    const unordered_set<NfaNode<T> *> &beforeClosure = c->next(*b);
+                    const unordered_set<NfaNode<T, I> *> &beforeClosure = c->next(*b);
                     for (auto &x : beforeClosure)
                     {
-                        unordered_set<NfaNode<T> *> afterClosure = x->epsilon_closure();
+                        unordered_set<NfaNode<T, I> *> afterClosure = x->epsilon_closure();
                         next.merge(afterClosure);
                     }
                 }
@@ -134,10 +130,13 @@ namespace automata
     template <typename T>
     class Nfa<T, int> : public Nfa<T, int, false>
     {
+    private:
+        inline static int nextId = 0;
+
     public:
         Nfa()
         {
-            auto s = make_unique<NfaNode<T>>();
+            auto s = make_unique<NfaNode<T, int>>(nextId++);
             this->start = &*s;
             this->end = &*s;
             this->nodes[s->get_id()] = move(s);
@@ -145,8 +144,8 @@ namespace automata
 
         Nfa(T accept)
         {
-            auto s = make_unique<NfaNode<T>>();
-            auto e = make_unique<NfaNode<T>>();
+            auto s = make_unique<NfaNode<T, int>>(nextId++);
+            auto e = make_unique<NfaNode<T, int>>(nextId++);
             this->start = &*s;
             this->end = &*e;
             this->nodes[s->get_id()] = move(s);
@@ -157,8 +156,8 @@ namespace automata
 
         Nfa(const unordered_set<T> &acceptAny)
         {
-            auto s = make_unique<NfaNode<T>>();
-            auto e = make_unique<NfaNode<T>>();
+            auto s = make_unique<NfaNode<T, int>>(nextId++);
+            auto e = make_unique<NfaNode<T, int>>(nextId++);
             this->start = &*s;
             this->end = &*e;
             this->nodes[s->get_id()] = move(s);

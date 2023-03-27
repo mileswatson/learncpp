@@ -8,8 +8,8 @@ using namespace automata;
 
 TEST(NfaTest, CreateNode)
 {
-    auto a = make_unique<NfaNode<char>>();
-    auto b = make_unique<NfaNode<char>>();
+    auto a = make_unique<NfaNode<char, int>>(0);
+    auto b = make_unique<NfaNode<char, int>>(1);
 
     ASSERT_EQ(a->get_id(), 0);
     ASSERT_EQ(b->get_id(), 1);
@@ -30,10 +30,10 @@ TEST(NfaTest, CreateNode)
 
 TEST(NfaTest, EpsilonClosure)
 {
-    auto a = make_unique<NfaNode<char>>();
-    auto b = make_unique<NfaNode<char>>();
-    auto c = make_unique<NfaNode<char>>();
-    auto d = make_unique<NfaNode<char>>();
+    auto a = make_unique<NfaNode<char, int>>(0);
+    auto b = make_unique<NfaNode<char, int>>(1);
+    auto c = make_unique<NfaNode<char, int>>(2);
+    auto d = make_unique<NfaNode<char, int>>(3);
 
     a->add_connection({}, &*a);
     a->add_connection({}, &*b);
@@ -57,12 +57,14 @@ void test_nfa(Nfa<char> &&nfa, const vector<string> &failInputs, const vector<pa
             FAIL();
         }
     }
+
     for (auto &[s, l] : succeedInputs)
     {
         auto match = nfa.longest_match(s.begin(), s.end());
         if (!match || (*match != s.begin() + l))
         {
             cout << s << endl;
+            cout << !!match << endl;
             FAIL();
         }
     }

@@ -9,13 +9,10 @@ using namespace std;
 
 namespace automata
 {
-    template <typename T, typename I = int, bool fully_defined = true>
-    class NfaNode;
-
     template <typename T, typename I>
-    class NfaNode<T, I, false>
+    class NfaNode
     {
-    protected:
+    private:
         I id;
         unordered_map<optional<T>, unordered_set<NfaNode<T, I> *>> connections;
 
@@ -33,6 +30,7 @@ namespace automata
         {
             return id;
         }
+        
         void add_connection(optional<T> input, NfaNode<T, I> *destination)
         {
             unordered_set<NfaNode<T, I> *> &s = connections[input];
@@ -62,23 +60,6 @@ namespace automata
             return visited;
         }
     };
-
-    template <typename T, typename I>
-    class NfaNode<T, I, true> : public NfaNode<T, I, false>
-    {
-        using NfaNode<T, I, false>::NfaNode;
-    };
-
-    template <typename T>
-    class NfaNode<T, int, true> : public NfaNode<T, int, false>
-    {
-        using NfaNode<T, int, false>::NfaNode;
-        static inline int nextId = 0;
-
-    public:
-        NfaNode() : NfaNode<T, int, false>(nextId++) {}
-    };
-
 }
 
 #endif
