@@ -88,11 +88,25 @@ namespace automata
             nodes[e->get_id()] = move(e);
         }
 
-        static Nfa<T> and_then(Nfa<T> &&first, Nfa<T> &&second)
+        static Nfa<T> concat(Nfa<T> &&first, Nfa<T> &&second)
         {
-            first.nodes.merge(second.nodes);
+            for (auto &[k, v] : second.nodes)
+            {
+                first.nodes.emplace(k, move(v));
+            }
             first.end->add_connection({}, second.start);
             return Nfa<T>(first.start, second.end, move(first.nodes));
+        }
+
+        static Nfa<T> either(Nfa<T> &&first, Nfa<T> &&second)
+        {
+            for (auto &[k, v] : second.nodes)
+            {
+                first.nodes.emplace(k, move(v));
+            }
+            first.start->add_connection({}, second.start);
+            second.end->add_connection({}, first.end);
+            return Nfa<T>(first.start, first.end, move(first.nodes));
         }
 
         template <typename Iter>

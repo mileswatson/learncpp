@@ -27,27 +27,6 @@ TEST(NfaTest, CreateNode)
     ASSERT_EQ(aEpsilon.count(&*b), 1);
 }
 
-TEST(NfaTest, AndThen)
-{
-    auto a = Nfa('a');
-    auto b = Nfa('b');
-    auto aAndB = Nfa<char>::and_then(move(a), move(b));
-    vector<string> failInputs = {"", "a", "b", "aab", "c", "cab"};
-    for (auto &f : failInputs)
-    {
-        auto match = aAndB.longest_match(f.begin(), f.end());
-        if (match)
-            FAIL();
-    }
-    vector<string> succeedInputs = {"ab", "abc", "abbc"};
-    for (auto &s : succeedInputs)
-    {
-        auto match = aAndB.longest_match(s.begin(), s.end());
-        if (!match || *match == s.begin() + 2)
-            FAIL();
-    }
-}
-
 TEST(NfaTest, EpsilonClosure)
 {
     auto a = make_unique<NfaNode<char>>();
@@ -64,4 +43,46 @@ TEST(NfaTest, EpsilonClosure)
     auto epsilon_closure = a->epsilon_closure();
 
     ASSERT_EQ(epsilon_closure, unordered_set({&*a, &*b, &*c}));
+}
+
+void test_nfa(Nfa<char> &&nfa, vector<string> failInputs, vector<pair<string, int>> succeedInputs)
+{
+    for (auto &f : failInputs)
+    {
+        auto match = nfa.longest_match(f.begin(), f.end());
+        if (match)
+        {
+            cout << f << endl;
+            FAIL();
+        }
+    }
+    for (auto &[s, l] : succeedInputs)
+    {
+        auto match = nfa.longest_match(s.begin(), s.end());
+        if (!match || *match == s.begin() + l)
+        {
+            cout << s << endl;
+            FAIL();
+        }
+    }
+}
+
+TEST(NfaTest, concat)
+{
+    auto a = Nfa('a');
+    auto b = Nfa('b');
+    auto ab = Nfa<char>::concat(move(a), move(b));
+    vector<string> failInputs = {"", "a", "b", "aab", "c", "cab"};
+    vector<pair<string, int>> succeedInputs = {make_pair("ab", 2), make_pair("abc", 2), make_pair("abbc", 2)};
+    test_nfa(move(ab), failInputs, succeedInputs);
+}
+
+TEST(NfaTest, either)
+{
+    auto a = Nfa('a');
+    auto b = Nfa('b');
+    auto aOrB = Nfa<char>::either(move(a), move(b));
+    vector<string> failInputs = {"c"};
+    vector<pair<string, int>> succeedInputs = {make_pair("a", 1), make_pair("b", 1), make_pair("ab", 1), make_pair("ba", 1), make_pair("ac", 1), make_pair("bc", 1)};
+    test_nfa(move(aOrB), failInputs, succeedInputs);
 }
