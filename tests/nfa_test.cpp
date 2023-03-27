@@ -76,9 +76,7 @@ TEST(NfaTest, empty)
 
 TEST(NfaTest, concat)
 {
-    auto a = Nfa('a');
-    auto b = Nfa('b');
-    auto ab = Nfa<char>::concat(move(a), move(b));
+    auto ab = concat(Nfa('a'), Nfa('b'));
     vector<string> failInputs = {"", "a", "b", "aab", "c", "cab"};
     vector<pair<string, int>> succeedInputs = {make_pair("ab", 2), make_pair("abc", 2), make_pair("abbc", 2)};
     test_nfa(move(ab), failInputs, succeedInputs);
@@ -86,10 +84,18 @@ TEST(NfaTest, concat)
 
 TEST(NfaTest, either)
 {
-    auto a = Nfa('a');
-    auto b = Nfa('b');
-    auto aOrB = Nfa<char>::either(move(a), move(b));
+    auto aOrB = either(Nfa('a'), Nfa('b'));
     vector<string> failInputs = {"c"};
     vector<pair<string, int>> succeedInputs = {make_pair("a", 1), make_pair("b", 1), make_pair("ab", 1), make_pair("ba", 1), make_pair("ac", 1), make_pair("bc", 1)};
     test_nfa(move(aOrB), failInputs, succeedInputs);
+}
+
+TEST(NfaTest, zerOrMore)
+{
+    auto abStar = zeroOrMore(concat(Nfa('a'), Nfa('b')));
+    vector<string> failInputs = {};
+    vector<pair<string, int>> succeedInputs = {
+        make_pair("", 0), make_pair("c", 0), make_pair("ac", 0),
+        make_pair("cb", 0), make_pair("ab", 2), make_pair("abc", 2), make_pair("aba", 2), make_pair("ababc", 4)};
+    test_nfa(move(abStar), failInputs, succeedInputs);
 }

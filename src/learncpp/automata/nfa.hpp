@@ -62,6 +62,41 @@ namespace automata
     };
 
     template <typename T>
+    class Nfa;
+
+    template <typename T>
+    Nfa<T> concat(Nfa<T> &&first, Nfa<T> &&second)
+    {
+        for (auto &[k, v] : second.nodes)
+        {
+            first.nodes.emplace(k, move(v));
+        }
+        first.end->add_connection({}, second.start);
+        first.end = second.end;
+        return move(first);
+    };
+
+    template <typename T>
+    Nfa<T> either(Nfa<T> &&left, Nfa<T> &&right)
+    {
+        for (auto &[k, v] : right.nodes)
+        {
+            left.nodes.emplace(k, move(v));
+        }
+        left.start->add_connection({}, right.start);
+        right.end->add_connection({}, left.end);
+        return move(left);
+    }
+
+    template <typename T>
+    Nfa<T> zeroOrMore(Nfa<T> &&nfa)
+    {
+        nfa.start->add_connection({}, nfa.end);
+        nfa.end->add_connection({}, nfa.start);
+        return move(nfa);
+    }
+
+    template <typename T>
     class Nfa
     {
     private:
@@ -77,6 +112,9 @@ namespace automata
         operator=(const Nfa<T> &) = delete;
 
     public:
+        Nfa(Nfa<T> &&) = default;
+        Nfa<T> &operator=(Nfa<T> &&) = default;
+
         Nfa()
         {
             auto s = make_unique<NfaNode<T>>();
@@ -96,26 +134,14 @@ namespace automata
             nodes[e->get_id()] = move(e);
         }
 
-        static Nfa<T> concat(Nfa<T> &&first, Nfa<T> &&second)
-        {
-            for (auto &[k, v] : second.nodes)
-            {
-                first.nodes.emplace(k, move(v));
-            }
-            first.end->add_connection({}, second.start);
-            return Nfa<T>(first.start, second.end, move(first.nodes));
-        }
+        template <typename U>
+        friend Nfa<U> concat(Nfa<U> &&, Nfa<U> &&);
 
-        static Nfa<T> either(Nfa<T> &&first, Nfa<T> &&second)
-        {
-            for (auto &[k, v] : second.nodes)
-            {
-                first.nodes.emplace(k, move(v));
-            }
-            first.start->add_connection({}, second.start);
-            second.end->add_connection({}, first.end);
-            return Nfa<T>(first.start, first.end, move(first.nodes));
-        }
+        template <typename U>
+        friend Nfa<U> either(Nfa<U> &&, Nfa<U> &&);
+
+        template <typename U>
+        friend Nfa<U> zeroOrMore(Nfa<U> &&);
 
         template <typename Iter>
             requires input_iterator<Iter> &&
@@ -143,6 +169,7 @@ namespace automata
             return lastMatch;
         }
     };
+
 }
 
 #endif
