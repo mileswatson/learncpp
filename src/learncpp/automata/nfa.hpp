@@ -77,6 +77,14 @@ namespace automata
         operator=(const Nfa<T> &) = delete;
 
     public:
+        Nfa()
+        {
+            auto s = make_unique<NfaNode<T>>();
+            start = &*s;
+            end = &*s;
+            nodes[s->get_id()] = move(s);
+        }
+
         Nfa(T accept)
         {
             auto s = make_unique<NfaNode<T>>();
@@ -130,7 +138,7 @@ namespace automata
                 }
                 current = move(next);
                 if (current.contains(end))
-                    lastMatch = optional(b);
+                    lastMatch = optional(b + 1);
             }
             return lastMatch;
         }

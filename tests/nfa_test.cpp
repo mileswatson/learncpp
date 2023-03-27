@@ -59,12 +59,19 @@ void test_nfa(Nfa<char> &&nfa, vector<string> failInputs, vector<pair<string, in
     for (auto &[s, l] : succeedInputs)
     {
         auto match = nfa.longest_match(s.begin(), s.end());
-        if (!match || *match == s.begin() + l)
+        if (!match || (*match != s.begin() + l))
         {
             cout << s << endl;
             FAIL();
         }
     }
+}
+
+TEST(NfaTest, empty)
+{
+    auto e = Nfa<char>();
+    vector<pair<string, int>> succeedInputs = {make_pair("", 0), make_pair("a", 0)};
+    test_nfa(move(e), {}, succeedInputs);
 }
 
 TEST(NfaTest, concat)
