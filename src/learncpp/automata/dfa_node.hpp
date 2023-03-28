@@ -15,7 +15,7 @@ namespace automata
     {
     private:
         unordered_set<I> nfaStates;
-        unordered_map<T, DfaNode<T, I> *> connections;
+        unordered_map<T, const DfaNode<T, I> *> connections;
 
         DfaNode(const DfaNode<T, I> &) = delete;
         DfaNode<T, I> &operator=(const DfaNode<T, I> &) = delete;
@@ -32,9 +32,9 @@ namespace automata
             return nfaStates;
         }
 
-        void add_connection(const T &input, DfaNode<T, I> *destination)
+        void add_connection(const T &input, const DfaNode<T, I> *destination)
         {
-            auto &[_, inserted] = connections.try_emplate(input, destination);
+            const auto &[_, inserted] = connections.try_emplace(input, destination);
             if (!inserted)
                 throw runtime_error("Edge already exists!");
         }
@@ -44,7 +44,7 @@ namespace automata
             return nfaStates.contains(nfaState);
         }
 
-        optional<DfaNode<T, I> *> next(const T &input) const
+        optional<const DfaNode<T, I> *> next(const T &input) const
         {
             auto found = connections.find(input);
             if (found != connections.end())

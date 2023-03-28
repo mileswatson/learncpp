@@ -14,7 +14,7 @@ namespace automata
     {
     private:
         I id;
-        unordered_map<optional<T>, unordered_set<NfaNode<T, I> *>> connections;
+        unordered_map<optional<T>, unordered_set<const NfaNode<T, I> *>> connections;
 
         NfaNode(const NfaNode<T, I> &) = delete;
         NfaNode<T, I> &operator=(const NfaNode<T, I> &) = delete;
@@ -31,13 +31,13 @@ namespace automata
             return id;
         }
 
-        void add_connection(optional<T> input, NfaNode<T, I> *destination)
+        void add_connection(optional<T> input, const NfaNode<T, I> *destination)
         {
-            unordered_set<NfaNode<T, I> *> &s = connections[input];
+            unordered_set<const NfaNode<T, I> *> &s = connections[input];
             s.emplace(destination);
         }
 
-        optional<reference_wrapper<const unordered_set<NfaNode<T, I> *>>> next(optional<T> input) const
+        optional<reference_wrapper<const unordered_set<const NfaNode<T, I> *>>> next(optional<T> input) const
         {
             const auto found = connections.find(input);
             if (found != connections.end())
@@ -45,12 +45,15 @@ namespace automata
             return {};
         }
 
-        void add_valid_inputs(unordered_set<T> &inputs) const
+        unordered_set<T> valid_inputs() const
         {
+            unordered_set<T> inputs;
             for (auto &[k, _] : connections)
             {
-                inputs.emplace(k);
+                if (k)
+                    inputs.emplace(*k);
             }
+            return inputs;
         }
 
         void visit_epsilon_closure(unordered_set<const NfaNode<T, I> *> &visited) const
@@ -60,7 +63,7 @@ namespace automata
             auto found = next({});
             if (!found)
                 return;
-            const unordered_set<NfaNode<T, I> *> &toVisit = *found;
+            const unordered_set<const NfaNode<T, I> *> &toVisit = *found;
             for (auto &v : toVisit)
             {
                 v->visit_epsilon_closure(visited);
@@ -74,6 +77,17 @@ namespace automata
             return visited;
         }
     };
+
+    template <typename T, typename I>
+    unordered_set<const NfaNode<T, I> *> epsilon_closure(const unordered_set<const NfaNode<T, I> *> &nodes)
+    {
+        unordered_set<const NfaNode<T, I> *> closure;
+        for (auto &n : nodes)
+        {
+            closure.merge(n->epsilon_closure());
+        }
+        return closure;
+    }
 }
 
 #endif

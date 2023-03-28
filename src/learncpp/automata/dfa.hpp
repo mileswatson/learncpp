@@ -44,6 +44,23 @@ namespace automata
             return nodes.size() - 1;
         }
 
+        int visit(const Nfa<T, I> &nfa, const unordered_set<const NfaNode<T, I> *> &states)
+        {
+            int from = find_or_insert(states);
+            for (auto &state : states)
+            {
+                for (const auto &input : state->valid_inputs())
+                {
+                    auto next = state->next(input);
+                    if (!next)
+                        continue;
+                    int to = visit(nfa, next->get());
+                    nodes[from]->add_connection(input, &*nodes[to]);
+                }
+            }
+            return from;
+        }
+
     public:
         Dfa(Dfa<T, I> &&) = default;
         Dfa<T, I> &operator=(Dfa<T, I> &&) = default;
@@ -53,12 +70,6 @@ namespace automata
             auto s = make_unique<DfaNode<T, I>>(move(start));
             this->start = &*s;
             nodes.push_back(move(s));
-        }
-
-        int visit(const Nfa<T, I> &nfa, const unordered_set<const NfaNode<T, I> *> &states)
-        {
-            int index = find_or_insert(states);
-            return index;
         }
 
         Dfa(Nfa<T, I> &nfa) : end(nfa.end->get_id())
@@ -71,7 +82,7 @@ namespace automata
                      same_as<typename Iter::value_type, T>
         optional<Iter> longest_match(Iter b, Iter e) const
         {
-            DfaNode<T, I> *current = start;
+            const DfaNode<T, I> *current = start;
             optional<Iter> lastMatch = current->contains(end) ? optional(b) : nullopt;
             for (; b != e; b++)
             {

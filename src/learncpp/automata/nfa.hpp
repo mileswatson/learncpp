@@ -99,17 +99,13 @@ namespace automata
                 unordered_set<const NfaNode<T, I> *> next;
                 for (auto &c : current)
                 {
-                    auto beforeClosureOpt = c->next(*b);
-                    if (!beforeClosureOpt)
-                        continue;
-                    const unordered_set<NfaNode<T, I> *> &beforeClosure = *beforeClosureOpt;
-                    for (auto &x : beforeClosure)
+                    if (auto n = c->next(*b))
                     {
-                        unordered_set<const NfaNode<T, I> *> afterClosure = x->epsilon_closure();
-                        next.merge(afterClosure);
+                        auto copied = n->get();
+                        next.merge(copied);
                     }
                 }
-                current = move(next);
+                current = epsilon_closure(next);
                 if (current.contains(end))
                     lastMatch = optional(b + 1);
             }
