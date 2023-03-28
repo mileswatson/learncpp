@@ -72,6 +72,27 @@ void test_nfa(Nfa<char> &&nfa, const vector<string> &failInputs, const vector<pa
             FAIL();
         }
     }
+
+    for (auto &f : failInputs)
+    {
+        auto match = dfa.longest_match(f.begin(), f.end());
+        if (match)
+        {
+            cout << f << endl;
+            FAIL();
+        }
+    }
+
+    for (auto &[s, l] : succeedInputs)
+    {
+        auto match = dfa.longest_match(s.begin(), s.end());
+        if (!match || (*match != s.begin() + l))
+        {
+            cout << s << endl;
+            cout << !!match << endl;
+            FAIL();
+        }
+    }
 }
 
 TEST(NfaTest, empty)

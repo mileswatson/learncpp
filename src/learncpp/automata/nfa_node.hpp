@@ -45,15 +45,13 @@ namespace automata
             return {};
         }
 
-        unordered_set<T> valid_inputs() const
+        void add_valid_inputs(unordered_set<T> &inputs) const
         {
-            unordered_set<T> inputs;
             for (auto &[k, _] : connections)
             {
                 if (k)
                     inputs.emplace(*k);
             }
-            return inputs;
         }
 
         void visit_epsilon_closure(unordered_set<const NfaNode<T, I> *> &visited) const

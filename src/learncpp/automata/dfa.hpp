@@ -28,7 +28,7 @@ namespace automata
         Dfa(const Dfa<T, I> &) = delete;
         Dfa<T, I> &operator=(const Dfa<T, I> &) = delete;
 
-        int find_or_insert(const unordered_set<const NfaNode<T, I> *> &states)
+        pair<int, bool> find_or_insert(const unordered_set<const NfaNode<T, I> *> &states)
         {
             unordered_set<I> subset;
             for (auto &s : states)
@@ -38,25 +38,36 @@ namespace automata
             for (int i = 0; i < nodes.size(); i++)
             {
                 if (nodes[i]->get_nfa_states() == subset)
-                    return i;
+                    return make_pair(i, false);
             }
             nodes.push_back(make_unique<DfaNode<T, I>>(move(subset)));
-            return nodes.size() - 1;
+            return make_pair(nodes.size() - 1, true);
         }
 
         int visit(const Nfa<T, I> &nfa, const unordered_set<const NfaNode<T, I> *> &states)
         {
-            int from = find_or_insert(states);
-            for (auto &state : states)
+            const auto [from, inserted] = find_or_insert(states);
+            if (!inserted)
+                return from;
+            unordered_set<T> valid_inputs;
+            for (const auto &state : states)
             {
-                for (const auto &input : state->valid_inputs())
+                state->add_valid_inputs(valid_inputs);
+            }
+
+            for (const auto &input : valid_inputs)
+            {
+                unordered_set<const NfaNode<T, I> *> next;
+                for (const auto &state : states)
                 {
-                    auto next = state->next(input);
-                    if (!next)
-                        continue;
-                    int to = visit(nfa, next->get());
-                    nodes[from]->add_connection(input, &*nodes[to]);
+                    if (auto n = state->next(input))
+                    {
+                        auto copied = n->get();
+                        next.merge(copied);
+                    }
                 }
+                int to = visit(nfa, epsilon_closure(next));
+                nodes[from]->add_connection(input, &*nodes[to]);
             }
             return from;
         }
@@ -74,7 +85,8 @@ namespace automata
 
         Dfa(Nfa<T, I> &nfa) : end(nfa.end->get_id())
         {
-            visit(nfa, nfa.start->epsilon_closure());
+            int s = visit(nfa, nfa.start->epsilon_closure());
+            start = &*nodes[s];
         }
 
         template <typename Iter>
@@ -89,9 +101,7 @@ namespace automata
                 auto next = current->next(*b);
 
                 if (!next)
-                {
                     break;
-                }
                 current = *next;
                 if (current->contains(end))
                     lastMatch = optional(b + 1);
