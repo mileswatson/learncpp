@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <learncpp/automata/nfa.hpp>
 #include <learncpp/automata/nfa_node.hpp>
+#include <learncpp/automata/dfa.hpp>
 #include <memory>
 
 using namespace std;
@@ -18,12 +19,12 @@ TEST(NfaTest, CreateNode)
     a->add_connection('a', &*a);
     a->add_connection({}, &*b);
 
-    auto aA = a->next('a');
+    auto aA = a->next('a').value().get();
     ASSERT_EQ(aA.size(), 2);
     ASSERT_EQ(aA.count(&*a), 1);
     ASSERT_EQ(aA.count(&*b), 1);
 
-    auto aEpsilon = a->next({});
+    auto aEpsilon = a->next({}).value().get();
     ASSERT_EQ(aEpsilon.size(), 1);
     ASSERT_EQ(aEpsilon.count(&*b), 1);
 }
@@ -43,11 +44,14 @@ TEST(NfaTest, EpsilonClosure)
 
     auto epsilon_closure = a->epsilon_closure();
 
-    ASSERT_EQ(epsilon_closure, unordered_set({&*a, &*b, &*c}));
+    unordered_set<const NfaNode<char, int> *> answer({&*a, &*b, &*c});
+    ASSERT_EQ(epsilon_closure, answer);
 }
 
 void test_nfa(Nfa<char> &&nfa, const vector<string> &failInputs, const vector<pair<string, int>> &succeedInputs)
 {
+    Dfa<char> dfa(nfa);
+
     for (auto &f : failInputs)
     {
         auto match = nfa.longest_match(f.begin(), f.end());

@@ -14,6 +14,9 @@ using namespace std;
 
 namespace automata
 {
+    template <typename T, typename I>
+    class Dfa;
+
     template <typename T, typename I = int, bool fully_defined = true>
     class Nfa;
 
@@ -89,17 +92,20 @@ namespace automata
                      same_as<typename Iter::value_type, T>
         optional<Iter> longest_match(Iter b, Iter e) const
         {
-            unordered_set<NfaNode<T, I> *> current = start->epsilon_closure();
+            unordered_set<const NfaNode<T, I> *> current = start->epsilon_closure();
             optional<Iter> lastMatch = current.contains(end) ? optional(b) : nullopt;
             for (; b != e && !current.empty(); b++)
             {
-                unordered_set<NfaNode<T, I> *> next;
+                unordered_set<const NfaNode<T, I> *> next;
                 for (auto &c : current)
                 {
-                    const unordered_set<NfaNode<T, I> *> &beforeClosure = c->next(*b);
+                    auto beforeClosureOpt = c->next(*b);
+                    if (!beforeClosureOpt)
+                        continue;
+                    const unordered_set<NfaNode<T, I> *> &beforeClosure = *beforeClosureOpt;
                     for (auto &x : beforeClosure)
                     {
-                        unordered_set<NfaNode<T, I> *> afterClosure = x->epsilon_closure();
+                        unordered_set<const NfaNode<T, I> *> afterClosure = x->epsilon_closure();
                         next.merge(afterClosure);
                     }
                 }
@@ -118,6 +124,9 @@ namespace automata
 
         template <typename U, typename V>
         friend Nfa<U, V> zeroOrMore(Nfa<U, V> &&);
+
+        template <typename U, typename V>
+        friend class Dfa;
     };
 
     template <typename T, typename I>

@@ -27,7 +27,7 @@ namespace automata
         {
         }
 
-        const unordered_set<I> &get_nfa_states()
+        const unordered_set<I> &get_nfa_states() const
         {
             return nfaStates;
         }
@@ -39,12 +39,12 @@ namespace automata
                 throw runtime_error("Edge already exists!");
         }
 
-        bool contains(const I &nfaState)
+        bool contains(const I &nfaState) const
         {
             return nfaStates.contains(nfaState);
         }
 
-        optional<DfaNode<T, I> *> next(const T &input)
+        optional<DfaNode<T, I> *> next(const T &input) const
         {
             auto found = connections.find(input);
             if (found != connections.end())

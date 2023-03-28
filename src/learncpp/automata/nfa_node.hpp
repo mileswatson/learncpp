@@ -26,36 +26,50 @@ namespace automata
         {
         }
 
-        const I &get_id()
+        const I &get_id() const
         {
             return id;
         }
-        
+
         void add_connection(optional<T> input, NfaNode<T, I> *destination)
         {
             unordered_set<NfaNode<T, I> *> &s = connections[input];
             s.emplace(destination);
         }
 
-        const unordered_set<NfaNode<T, I> *> &next(optional<T> input)
+        optional<reference_wrapper<const unordered_set<NfaNode<T, I> *>>> next(optional<T> input) const
         {
-            return connections[input];
+            const auto found = connections.find(input);
+            if (found != connections.end())
+                return found->second;
+            return {};
         }
 
-        void visit_epsilon_closure(unordered_set<NfaNode<T, I> *> &visited)
+        void add_valid_inputs(unordered_set<T> &inputs) const
         {
-            if (!visited.emplace(static_cast<NfaNode<T, I> *>(this)).second)
+            for (auto &[k, _] : connections)
+            {
+                inputs.emplace(k);
+            }
+        }
+
+        void visit_epsilon_closure(unordered_set<const NfaNode<T, I> *> &visited) const
+        {
+            if (!visited.emplace(this).second)
                 return;
-            const unordered_set<NfaNode<T, I> *> &toVisit = this->connections[{}];
+            auto found = next({});
+            if (!found)
+                return;
+            const unordered_set<NfaNode<T, I> *> &toVisit = *found;
             for (auto &v : toVisit)
             {
                 v->visit_epsilon_closure(visited);
             }
         };
 
-        unordered_set<NfaNode<T, I> *> epsilon_closure()
+        unordered_set<const NfaNode<T, I> *> epsilon_closure() const
         {
-            unordered_set<NfaNode<T, I> *> visited;
+            unordered_set<const NfaNode<T, I> *> visited;
             visit_epsilon_closure(visited);
             return visited;
         }
